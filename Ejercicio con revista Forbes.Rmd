@@ -1,0 +1,146 @@
+---
+title: "Ejercicio_forbes"
+author: "Sebastian Carrero - Robert Garcia"
+date: "2023-05-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.  Definir directorio
+
+```{r cars}
+setwd("C:/SEBASTIAN/ESP. ANALITICA DE DATOS/ETL/FORBES")
+getwd() #Me dice cual es la dirección arriba puesta
+list.files() #me dice que archivos hay en ese directorio
+```
+## 2. Importación de datos
+```{r}
+forbes <- read.csv(file = "Forbes 2000 2021.csv", sep = ";")
+forbes
+head(forbes, 10)
+
+```
+# 3- Transformación de los datos
+```{r}
+class(forbes) 
+length(forbes) #Asi me dice el número de variabes
+ncol(forbes) #Columnas
+nrow(forbes) #filas
+dim(forbes) #filas y columnas
+
+str(forbes) #me dice con que formato estan los datos
+
+colnames(forbes) #Me trae como esta nombradas las columnas
+class(colnames(forbes))
+
+names <- c('Rank', 'Name', 'Country', 'Sales', 'Profits', 'Assets', 'Market_value')
+length(names)
+class(names)
+
+colnames(forbes) <- names #Reemplazo los nombres actuales por los realizados en la variable names
+
+#Saber si hay vacios vacios
+
+# is.na(forbes$Sales) #Si esta vacio le coloca True, si esta con valor coloca un False
+# sum(is.na(forbes$Sales)) #Suma los valores vacios porque el true actua como uno y false como cero
+
+
+#Cohersión de datos, pasar un tipo de dato a otro que quiero
+
+forbes$Sales <- gsub(pattern = ',', replacement = '', x = forbes$Sales) #Reemplazo las comas de los valores por nada
+forbes$Sales <- gsub('[$]', '', forbes$Sales) #Reemplazo el signo pesos por nada
+forbes$Sales<- as.numeric(forbes$Sales) #Cambios los tipo de datos de la variable por datos númericos
+class(forbes$Sales)
+
+
+#Realizar una funcion para realizar lo anterior solo ingresando el parametro
+
+coercion <- function(x){
+  x <- gsub('[$-,]','', x ) #Con el - (guion) separando lo que quiero reemplazar puedo hacer dos cambios a la vez
+  x <- as.numeric(x)
+  return(x)
+}
+
+forbes$Profits <- coercion(forbes$Profits)
+forbes$Assets<- coercion(forbes$Assets)
+forbes$Market_value<- coercion(forbes$Market_value)
+
+str(forbes) #Ya tengo colos datos como los deseo
+
+```
+#4- Datos perdidos
+```{r}
+#Otra forma de hacer coercion
+forbes[,4:7] <- as.data.frame(lapply(forbes[,4:7], coercion))  #Con esta linea hago lo mismo que las lineas 67, 68, 69, PERO CON LAPPLY le ordeno a la función hacerlo a las columnas de 4 a 7
+
+head(forbes, 5)
+
+sum(is.na(forbes)) #Busca datos vacios y los suma
+complete.cases(forbes) #Hace lo mismo que lo anterior pero me dice si esta todo completo, validando fila por fila
+sum(!complete.cases(forbes)) # Utilizo el ! para que no sume los True si no lo contrariio
+
+#Ahora busco la posición donde esta el dato vacio
+forbes[complete.cases(forbes)==FALSE,] #Asi me informa la linea que que esta con el dato nulo
+forbes[!complete.cases(forbes),]#Hace lo mismo que la linea anteior
+
+#Calculo la proporcion de los datos vacios
+100 * sum(complete.cases(forbes)==FALSE)/nrow(forbes)
+
+#Si los datos vacios son muy altos (eS A CRITERIO DE UNO 1%) se deben usar METODOS DE IMPUTACIÓN
+
+forbes[complete.cases(forbes),] # aSI MUESTRO CUALES SON LAS FILAS QUE ESTAN COMPLETAS SIN EL DATO NULO
+forbes <- forbes[complete.cases(forbes),] #Asi sobrescribo las filas sin la fila del dato nulo en la base de datos
+
+
+write.csv(x = forbes, file = "Data_Forbes_Transformado.csv") #Asi guardo el documento ya transformado
+
+
+```
+# Exploración de los datos
+```{r}
+prop.table(table(forbes$Country)) #Asi muestro la participación de cada pais con empresas en la lista TABLA DE FRECUENCIA
+table(forbes$Country) #Asi muestro la cantidad de empresas por cada país
+
+forbes[forbes$Country == "Colombia",]
+
+forbes$Country <- as.factor(forbes$Country); levels(forbes$Country) #aSI CREO LA DELista las empresas en orden alfabetico
+
+Pais_latinos <- c("Argentina","Peru", "Chile", "Mexico",  "Colombia", "Venezuela", "Brazil" )
+length(Pais_latinos)
+
+#Paises latino americanos con empresas en forbes
+
+latinos <- forbes[forbes$Country %in% Pais_latinos,] #Asi muestro la lista con empresas de paises latino americanos
+latinos 
+
+tabla_latinos <- table(latinos$Country) #Asi creo la tabla de solo paises latinos
+
+
+dim(tabla_latinos) # numero de filas y columna de los latinos
+
+plot(x = forbes$Sales, y = forbes$Profits, xlab = "Sales", ylab = "Profits")
+
+
+```
+#Graficos
+
+```{r}
+install.packages('wooldridge')
+library('wooldridge')
+
+barplot(height = tabla_latinos )
+
+hist(x = forbes$Sales)
+
+
+
+```
+
+
+
+
+
+
